@@ -1,0 +1,15 @@
+student_id = input("Enter ID: ")
+name = input("Enter Name: ")
+cls = input("Enter Class: ")
+gender = input("Enter Gender: ")
+
+subject = input("Enter Subject: ")
+marks = int(input("Enter Marks: "))
+
+print("\n--- Student Record ---")
+print("ID:", student_id)
+print("Name:", name)
+print("Class:", cls)
+print("Gender:", gender)
+print("Subject:", subject)
+print("Marks:", marks)

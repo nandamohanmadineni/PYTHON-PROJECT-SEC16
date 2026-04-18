@@ -3,7 +3,6 @@
 # ==============================
 
 import json
-import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,19 +17,26 @@ class Student:
         self.name = name
         self.student_class = student_class
         self.gender = gender
-        self.marks = {}
+        self.marks = {}   # dynamic subjects
         self.attendance = {"present": 0, "total": 0}
         self.logs = []
 
     def add_marks(self, subject, score):
+        if len(self.marks) >= 3 and subject not in self.marks:
+            print("Only 3 subjects allowed!")
+            return
+
         if 0 <= score <= 100:
             self.marks[subject] = score
         else:
-            print("Invalid marks")
+            print("Invalid marks!")
 
     def add_attendance(self, present, total):
-        self.attendance["present"] = present
-        self.attendance["total"] = total
+        if present <= total:
+            self.attendance["present"] = present
+            self.attendance["total"] = total
+        else:
+            print("Invalid attendance")
 
     def add_log(self, remark):
         self.logs.append(remark)
@@ -40,11 +46,18 @@ class Student:
             return 0
         return (self.attendance["present"] / self.attendance["total"]) * 100
 
+    def total_marks(self):
+        return sum(self.marks.values())
+
     def display(self):
         print("\n--- Student ---")
-        print(self.sid, self.name, self.student_class, self.gender)
+        print("ID:", self.sid)
+        print("Name:", self.name)
+        print("Class:", self.student_class)
+        print("Gender:", self.gender)
         print("Marks:", self.marks)
-        print("Attendance %:", self.attendance_percentage())
+        print("Total:", self.total_marks())
+        print("Attendance %:", round(self.attendance_percentage(), 2))
         print("Logs:", self.logs)
 
 
@@ -53,11 +66,10 @@ class Student:
 # ==============================
 
 def save_json(students):
-    data = []
-    for s in students:
-        data.append(s.__dict__)
+    data = [s.__dict__ for s in students]
     with open("students.json", "w") as f:
         json.dump(data, f)
+
 
 def load_json():
     students = []
@@ -84,22 +96,26 @@ def class_average(students):
     for s in students:
         scores.extend(list(s.marks.values()))
     if scores:
-        print("Class Average:", np.mean(scores))
+        print("Class Average:", round(np.mean(scores), 2))
+    else:
+        print("No data available")
+
 
 def subject_average(students):
     df = pd.DataFrame([s.marks for s in students])
-    print("\nSubject Average:\n", df.mean())
+    print("\nSubject Average:\n", df.mean().round(2))
+
 
 def topper(students):
-    max_score = 0
+    max_score = -1
     top_student = None
     for s in students:
-        total = sum(s.marks.values())
+        total = s.total_marks()
         if total > max_score:
             max_score = total
             top_student = s
     if top_student:
-        print("Topper:", top_student.name, max_score)
+        print("Topper:", top_student.name, "with", max_score, "marks")
 
 
 # ==============================
@@ -110,8 +126,11 @@ def bar_chart(student):
     subjects = list(student.marks.keys())
     marks = list(student.marks.values())
     plt.bar(subjects, marks)
-    plt.title("Subject Scores")
+    plt.title(f"{student.name} - Subject Scores")
+    plt.xlabel("Subjects")
+    plt.ylabel("Marks")
     plt.show()
+
 
 def pie_chart(student):
     labels = ["Present", "Absent"]
@@ -119,13 +138,16 @@ def pie_chart(student):
     total = student.attendance["total"]
     sizes = [present, total - present]
     plt.pie(sizes, labels=labels, autopct='%1.1f%%')
-    plt.title("Attendance")
+    plt.title(f"{student.name} - Attendance")
     plt.show()
+
 
 def line_chart(student):
     marks = list(student.marks.values())
-    plt.plot(marks)
-    plt.title("Performance Trend")
+    plt.plot(marks, marker='o')
+    plt.title(f"{student.name} - Performance Trend")
+    plt.xlabel("Subjects")
+    plt.ylabel("Marks")
     plt.show()
 
 
@@ -155,7 +177,7 @@ students = load_json()
 while True:
     print("\n==== SAPAS MENU ====")
     print("1. Add Student")
-    print("2. Add Marks")
+    print("2. Add Marks (Max 3 Subjects)")
     print("3. Add Attendance")
     print("4. Add Remark")
     print("5. View Students")
@@ -176,9 +198,13 @@ while True:
         sid = input("Enter ID: ")
         for s in students:
             if s.sid == sid:
-                sub = input("Subject: ")
-                marks = float(input("Marks: "))
-                s.add_marks(sub, marks)
+                while True:
+                    print(f"Current subjects: {list(s.marks.keys())}")
+                    subject = input("Enter subject name (or 'done' to stop): ")
+                    if subject.lower() == "done":
+                        break
+                    marks = float(input("Enter marks: "))
+                    s.add_marks(subject, marks)
 
     elif choice == "3":
         sid = input("Enter ID: ")
@@ -215,5 +241,8 @@ while True:
 
     elif choice == "8":
         save_json(students)
-        print("Data Saved!")
+        print("Data Saved Successfully!")
         break
+
+    else:
+        print("Invalid choice! Try again.")
